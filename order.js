@@ -1,187 +1,149 @@
+var orders_data = document.getElementById('orders_data');
+let orders = [];
+const deliveryCosts = [0 , 15 , 20];
+const necklaceTypesCosts = [0,10, 20, 30];
+var modal = document.getElementById('myModal');
 
-const form = document.querySelector("#orders-form");
-const necklaceTextInput = document.querySelector("#necklaceText");
-const customerNameInput = document.querySelector("#customerName");
-const customerAddressInput = document.querySelector("#customerAddress");
-const customerEmailInput = document.querySelector("#customerEmail");
-const selectNecklaceType = document.querySelector("#necklaceType");
-const itemsNecklace = document.querySelector(".items");
-//const total = document.querySelector("#total");
-const tr = document.querySelector(".items");
-const deliveryType = document.querySelector("#deliveryType");
+LoadOrdersFromStorage();
 
-(function() {
-    // These are the constraints used to validate the form
-    var constraints = {
-      email: {
-        // Email is required
-        presence: true,
-        // and must be an email (duh)
-        email: true
-      },
-      necklaceText: {
-        // The custome need to pick a necklaceText too
-        presence: true,
-        // Necklace Text should be 8 digits or less
-        length: {
-          minimum: 1,
-          maximum: 8
-        }
-    },
-    customerName: {
-        // Customer name
-        presence: true,
-    },
-    customerAddress: {
-        // Address
-        presence: true,
-  
-    },
 
-    };
 
-    var form = document.querySelector("#orders-form");
-    form.addEventListener("submit", function(ev) {
-      ev.preventDefault();
-      handleFormSubmit(form);
-      addTotalToOrder();
-      addTotalDeleveryToOreder();
-      totalSumToOrder();
-      clearInputs();
+function LoadOrdersFromStorage(){
+    let ordersJson = localStorage.getItem("store_orders");
+    orders = JSON.parse(ordersJson);
+    CreateOrdersTable(orders);
+    
+}
 
-    });
-    // Hook up the inputs to validate on the fly
-    var inputs = document.querySelectorAll("input, select")
-    for (var i = 0; i < inputs.length; ++i) {
-      inputs.item(i).addEventListener("change", function(ev) {
-        var errors = validate(form, constraints) || {};
-        showErrorsForInput(this, errors[this.name])
-      });
-    }
-    function handleFormSubmit(form, input) {
-      // validate the form aainst the constraints
-      var errors = validate(form, constraints);
-      // then we update the form to reflect the results
-      showErrors(form, errors || {});
-      if (!errors) {
-        showSuccess();
-      }
-    }
-    // Updates the inputs with the validation errors
-    function showErrors(form, errors) {
-      // We loop through all the inputs and show the errors for that input
-      _.each(form.querySelectorAll("input[name], select[name]"), function(input) {
-        // Since the errors can be null if no errors were found we need to handle
-        // that
-        showErrorsForInput(input, errors && errors[input.name]);
-      });
-    }
-    // Shows the errors for a specific input
-    function showErrorsForInput(input, errors) {
-      // This is the root of the input
-      var formGroup = closestParent(input.parentNode, "form-group")
-        // Find where the error messages will be insert into
-        , messages = formGroup.querySelector(".messages");
-      // First we remove any old messages and resets the classes
-      resetFormGroup(formGroup);
-      // If we have errors
-      if (errors) {
-        // we first mark the group has having errors
-        formGroup.classList.add("has-error");
-        // then we append all the errors
-        _.each(errors, function(error) {
-          addError(messages, error);
+function CreateOrdersTable(orders){
+
+
+    
+    orders.forEach(order => {
+
+        let tr = document.createElement('tr');
+        
+        let td_order_id = document.createElement('td');
+        td_order_id.innerText = order.order_id;
+
+        let td_order_necklace = document.createElement('td');
+        td_order_necklace.innerText = order.order_necklace;
+
+        let td_order_necklace_cost = document.createElement('td');
+        td_order_necklace_cost.innerText = necklaceTypesCosts[order.order_necklace];
+
+
+        let td_order_text = document.createElement('td');
+        td_order_text.innerText = order.order_text;
+
+        let td_order_cus_name = document.createElement('td');
+        td_order_cus_name.innerText = order.order_cus_name;
+
+        let td_order_cus_address = document.createElement('td');
+        td_order_cus_address.innerText = order.order_cus_address;
+        
+        let td_order_cus_email = document.createElement('td');
+        td_order_cus_email.innerText = order.order_cus_email;
+
+        let td_order_delivery_cost = document.createElement('td');
+        td_order_delivery_cost.innerText = deliveryCosts[order.order_delivary_type];
+
+        let td_order_total_pay = document.createElement('td');
+        td_order_total_pay.innerText = order.order_total_pay;
+
+        let td_order_actions = document.createElement('td');
+
+        let btn_done = document.createElement('button');
+        btn_done.type = "button";
+        btn_done.className = "btn btn-primary btn-sm"
+        let btn_done_i = document.createElement('i');
+        btn_done_i.className = "fas fa-check-circle";
+        btn_done.appendChild(btn_done_i);
+        
+        btn_done.dataset.order_id = order.order_id;
+        
+        let btn_cancel = document.createElement('button');
+        btn_cancel.type = "button";
+        btn_cancel.className = "btn btn-danger btn-sm"
+        let btn_cancel_i = document.createElement('i');
+        btn_cancel_i.className = "fas fa-trash";
+        btn_cancel.appendChild(btn_cancel_i);
+
+        btn_cancel.dataset.order_id = order.order_id;
+
+
+        let btn_edit = document.createElement('button');
+        btn_edit.type = "button";
+        btn_edit.className = "btn btn-warning btn-sm"
+        let btn_edit_i = document.createElement('i');
+        btn_edit_i.className = "fas fa-pen";
+        btn_edit.appendChild(btn_edit_i);
+        btn_edit.dataset.order_id = order.order_id;
+        btn_edit.addEventListener('click' , function(){
+            editOrder(this.dataset.order_id);
         });
-      } else {
-        // otherwise we simply mark it as success
-        formGroup.classList.add("has-success");
-      }
-    }
-    // Recusively finds the closest parent that has the specified class
-    function closestParent(child, className) {
-      if (!child || child == document) {
-        return null;
-      }
-      if (child.classList.contains(className)) {
-        return child;
-      } else {
-        return closestParent(child.parentNode, className);
-      }
-    }
-    function resetFormGroup(formGroup) {
-      // Remove the success and error classes
-      formGroup.classList.remove("has-error");
-      formGroup.classList.remove("has-success");
-      // and remove any old messages
-      _.each(formGroup.querySelectorAll(".help-block.error"), function(el) {
-        el.parentNode.removeChild(el);
-      });
-    }
-    // Adds the specified error with the following markup
-    // <p class="help-block error">[message]</p>
-    function addError(messages, error) {
-      var block = document.createElement("p");
-      block.classList.add("help-block");
-      block.classList.add("error");
-      block.innerText = error;
-      messages.appendChild(block);
-    }
-
-
-    function addTotalToOrder() { 
-        var addTotalToOrdertd = document.createElement("td");
-        addTotalToOrdertd.setAttribute('id','total');
-
-        if(selectNecklaceType.value === 1 ){
-            itemsNecklace.value = "10"; 
-        }else if (selectNecklaceType.value === 2) {
-            itemsNecklace.value = "20";
-        }else if (selectNecklaceType.value === 3){
-            itemsNecklace.value = "30";
-        }
-        addTotalToOrdertd.appendChild(document.createTextNode(selectNecklaceType.value  * 10));
-        tr.appendChild(addTotalToOrdertd);      
-      }
-
-      function addTotalDeleveryToOreder(){
-        var totalDeleveryTd = document.createElement("td");
-        totalDeleveryTd.setAttribute('id','totalDelevery');
         
-        if(deliveryType.value === "0"){
-          totalDeleveryTd.textContent = "0";
-           
-        }else{
-          totalDeleveryTd.textContent = "15";
+
+        td_order_actions.appendChild(btn_done);
+        td_order_actions.appendChild(btn_cancel);
+        td_order_actions.appendChild(btn_edit);
+
+
+        tr.appendChild(td_order_id);
+        tr.appendChild(td_order_necklace);
+        tr.appendChild(td_order_necklace_cost);
+        tr.appendChild(td_order_text);
+        tr.appendChild(td_order_cus_name);
+        tr.appendChild(td_order_cus_address);
+        tr.appendChild(td_order_cus_email);
+        tr.appendChild(td_order_delivery_cost);
+        tr.appendChild(td_order_total_pay);
+        tr.appendChild(td_order_actions);
+
+
+     
+        orders_data.appendChild(tr)
+    });
+}
+
+function editOrder(order_id){
+    document.getElementById("order_edit_title").innerHTML = order_id;
+    modal.style.display = "block";
+    let order_to_edit = getOrderById(order_id);
+}
+
+function getOrderById(order_id){
+    let order_to_return = null;
+    orders.forEach(order => {
+        if(order.order_id == order_id ){
+            order_to_return = order;
         }
-        tr.appendChild(totalDeleveryTd); 
-      }
+    });
 
-      function totalSumToOrder(){
-        var td = document.createElement("td");
-        td.setAttribute('id','totalSum');
-        var sum;
-        var sum = parseInt(addTotalDeleveryToOreder()) + parseInt(selectNecklaceType.value  * 10);
-        td.appendChild(document.createTextNode(sum));
-        tr.appendChild(td);
-      }
-
-      function clearInputs(){
-        var elements = document.getElementsByTagName("input");
-        for (var i=0; i < elements.length; i++) {
-          if (elements[i].type === "text" || elements[i].type === "email" ) {
-            elements[i].value = "";
-          }
-        }
-      }
-
-      function showSuccess() {
-        // We made it \:D/
-        alert("Success!");
-        
-      }
+    return order_to_return;
 
 
-  })();
+}
+
+// Get the modal
+
+
+// Get the <span> element that closes the modal
+var span = document.getElementsByClassName("close")[0];
+
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+    modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+
 
 
 
